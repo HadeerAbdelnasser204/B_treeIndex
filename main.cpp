@@ -1,54 +1,55 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+
 using namespace std;
 
-const int leafNodeMarker = 0;
-const int nonLeafNodeMarker = 1;
 
-struct Record {
-    int data;
-
-    Record() {
-        data = 0;
-    }
-};
-
+// m >> number of descendants
+//2 * m + 1 >> size of each node (record)
 struct BTreeNode {
-     int nodeMarker; // 0 for leaf, 1 for non-leaf
-     vector<int> childIds;
-     vector<Record> records;
+    int isLeaf;  // 0 for leaf, 1 for non-leaf
+    vector<int>children; // record IDs or references to child nodes
 
-    BTreeNode(){
-        nodeMarker = leafNodeMarker;
-    }
 };
 
-void insertNode (fstream& file, const BTreeNode& node) {
-    file.seekp(0, ios::end);
-    file.write(reinterpret_cast<const char*>(&node), sizeof(BTreeNode));
-}
+void createFile(const char* filename, int recordNum, int m) {
+    BTreeNode node;
+    int nodeSize = 2 * m + 1;
+    fstream file(filename, ios::binary| ios::out| ios::app|ios::in);
+    for (int i = 0; i < recordNum; ++i) {
 
-void CreateIndexFile(const char* filename, int numberOfRecords, int m) {
-    fstream file(filename, std::ios::binary | std::ios::in | std::ios::out | std::ios::trunc);
+        node.isLeaf = 0;
 
-    // Create an empty root node
-    BTreeNode rootNode;
-  insertNode(file, rootNode);
+        for (int j = 0; j < nodeSize; ++j) {
 
-    // Create and write additional nodes as needed
-    for (int i = 1; i < numberOfRecords; ++i) {
-        BTreeNode node;
-        insertNode(file, node);
+            node.children.push_back(-1);
+
+        }
+
+        file.write(reinterpret_cast<char*>(&node), sizeof(BTreeNode));
+
+        //file.read(reinterpret_cast<char*>(&node), sizeof(BTreeNode));
     }
+
+    /*   for (int i = 0; i < recordNum; ++i) {
+
+           cout << endl;
+           for (int j = 0; j < nodeSize; j++) {
+                    cout <<  node.children[j] << " ";
+
+             }
+       }*/
 
     file.close();
 }
+
+
+
 int main() {
-    const char* filename = "btree_index.txt";
-    int numberOfRecords = 10;
+    const char* filename = "btree.txt";
+    int n = 10; // number of records
     int m = 5;
-
-    CreateIndexFile(filename, numberOfRecords, m);
-
+    createFile(filename, n, m);
+    return 0;
 }

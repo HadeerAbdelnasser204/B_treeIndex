@@ -1,3 +1,3 @@
-C:/Users/A plus/CLionProjects/B-treeIndex/cmake-build-debug/CMakeFiles/B_treeIndex.dir
-C:/Users/A plus/CLionProjects/B-treeIndex/cmake-build-debug/CMakeFiles/edit_cache.dir
-C:/Users/A plus/CLionProjects/B-treeIndex/cmake-build-debug/CMakeFiles/rebuild_cache.dir
+C:/Users/DELL/Desktop/Files/B_treeIndex/cmake-build-debug/CMakeFiles/B_treeIndex.dir
+C:/Users/DELL/Desktop/Files/B_treeIndex/cmake-build-debug/CMakeFiles/edit_cache.dir
+C:/Users/DELL/Desktop/Files/B_treeIndex/cmake-build-debug/CMakeFiles/rebuild_cache.dir

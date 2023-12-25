@@ -9,7 +9,7 @@
 					"jsonFile" : "directory-.-Debug-d0094a50bb2071803777.json",
 					"minimumCMakeVersion" : 
 					{
-						"string" : "3.24"
+						"string" : "3.26"
 					},
 					"projectIndex" : 0,
 					"source" : ".",
@@ -49,12 +49,12 @@
 	"kind" : "codemodel",
 	"paths" : 
 	{
-		"build" : "C:/Users/A plus/CLionProjects/B-treeIndex/cmake-build-debug",
-		"source" : "C:/Users/A plus/CLionProjects/B-treeIndex"
+		"build" : "C:/Users/DELL/Desktop/Files/B_treeIndex/cmake-build-debug",
+		"source" : "C:/Users/DELL/Desktop/Files/B_treeIndex"
 	},
 	"version" : 
 	{
 		"major" : 2,
-		"minor" : 4
+		"minor" : 5
 	}
 }
