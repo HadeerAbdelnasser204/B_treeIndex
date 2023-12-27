@@ -14,6 +14,7 @@ private:
     int m;
     short isLeaf;  // 0 for leaf, 1 for non-leaf
     vector<short>children; // record IDs or references to child nodes
+    vector<pair<short, short>> records;
 
 public:
 
@@ -27,7 +28,7 @@ public:
     }
 
 
-    void createFile(const char* filename, int recordNum) {
+    void CreateIndexFile(const char* filename, int recordNum) {
         //BTreeNode node;
         int nodeSize = 2 * m + 1;
         fstream file(filename, ios::binary| ios::out| ios::app|ios::in);
@@ -149,20 +150,106 @@ public:
 
     }
 
+
+
+
+    int SearchARecord(const char* filename, short RecordID) {
+        int nodeSize = 2 * m + 1;
+
+        fstream file(filename, ios::binary | ios::in);
+
+        file.seekg(nodeSize, ios::beg);
+        file.read(reinterpret_cast<char*>(&isLeaf), sizeof(isLeaf));
+
+        if (isLeaf == -1) {
+            return -1; // Record not found in this branch
+        }
+
+        records.clear();
+        for (int i = 0; i < m; ++i) {
+            short value, offset;
+            file.read(reinterpret_cast<char*>(&value), sizeof(value));
+            file.read(reinterpret_cast<char*>(&offset), sizeof(offset));
+            if (value == -1) {
+                break;
+            }
+            records.emplace_back(value, offset);
+        }
+
+        file.close();
+
+        // Search for the RecordID in the records vector
+        auto it = find_if(records.begin(), records.end(),
+                          [RecordID](const pair<short, short>& p) {
+                              return p.first == RecordID;
+                          });
+
+        if (it != records.end()) {
+            return it->second;
+        } else {
+            return -1;
+        }
+    }
+
 };
-
-
-
 
 int main() {
     const char* filename = "btree.txt";
     BTreeNode b;
     int n = 10; // number of records
     b.setM(5);
-    b.createFile(filename, n);
-    b.InsertNewRecordAtIndex(filename, 3, 12);
-    b.InsertNewRecordAtIndex(filename, 4, 15);
-   // b.InsertNewRecordAtIndex(filename, 2, 18);
+    int choice;
+    cout << "Welcome to in our program, B-Tree.\n";
+    do {
+        cout << "1. Create Index File\n";
+        cout << "2. Insert New Record\n";
+        cout << "3. Delete Record\n";
+        cout << "4. Display Index File Content\n";
+        cout << "5. Search for a Record\n";
+        cout << "0. Exit\n";
+        cout << "Enter your choice:";
+        cin >> choice;
+
+        switch (choice) {
+            case 1: {
+                b.CreateIndexFile(filename, n);
+                break;
+            }
+            case 2: {
+                short RecordID, Reference;
+                cout << "Enter RecordID and Reference:";
+                cin >> RecordID >> Reference;
+                b.InsertNewRecordAtIndex(filename, RecordID, Reference);
+                break;
+            }
+            case 3: {
+
+            }
+
+            case 4: {
+
+            }
+            case 5: {
+                short searchRecordID;
+                cout << "Enter RecordID to search:";
+                cin >> searchRecordID;
+                int result = b.SearchARecord(filename, searchRecordID);
+                if (result != -1) {
+                    cout << "The record is found, the reference is:  " << result << endl;
+                } else {
+                    cout << "Record not found." << endl;
+                }
+                break;
+            }
+
+            case 0:
+                cout << "Exiting program.\n";
+                break;
+            default:
+                cout << "Invalid choice. Please try again.\n";
+        }
+    } while (choice != 0);
+
     return 0;
 
 }
