@@ -2,6 +2,8 @@
 #include <fstream>
 #include <vector>
 #include <algorithm>
+#include <map>
+#include <cmath>
 
 using namespace std;
 
@@ -13,10 +15,11 @@ private:
 
     int m;
     short isLeaf;  // 0 for leaf, 1 for non-leaf
+    short nodeSize = (2 * (2 * m + 1)) + 2;
 //    vector<short>children; // record IDs or references to child nodes
     vector<pair<short, short>> records;
     // 0 for leaf, 1 for non-leaf
-    short children[nodeSize]; // record IDs or references to child nodes
+    //short children[nodeSize]; // record IDs or references to child nodes
 
 
 public:
@@ -91,95 +94,99 @@ public:
     }
 
     return 0;
-}
 
-};
 
-void createFile(const char* filename, int n) {
-    ofstream file(filename, ios::binary);
 
-    for (int i = 0; i < n; ++i) {
-        BTreeNode node;
-        node.isLeaf = 0;
-        for (int j = 0; j < nodeSize; ++j) {
-            node.children[j] = -1;
-        }
-        file.write(reinterpret_cast<char*>(&node.children), sizeof(node.children));
-    }
+   }
 
-    file.close();
-}
+    void displayFile(const char* filename) {
+        ifstream inputFile(filename, std::ios::binary);
 
-void displayFile(const char* filename) {
-     ifstream inputFile(filename, std::ios::binary);
-
-    if (inputFile.is_open()) {
-        // Read the content as binary data
-         short value;
-        while (inputFile.read(reinterpret_cast<char*>(&value), sizeof(value))) {
-            if (value != 2573) cout << value << ' ';
-            else cout <<'\n';
+        if (inputFile.is_open()) {
+            // Read the content as binary data
+            short value;
+            while (inputFile.read(reinterpret_cast<char*>(&value), sizeof(value))) {
+                if (value != 2573) cout << value << ' ';
+                else cout <<'\n';
             }}
         // Close the file
         inputFile.close();
 
 
-}
-
-void creatFile(const char* filename, int n,int record){
-    fstream file(filename,ios::out);
-    if(file.is_open()){
-        cout<<"file open successfully\n";
-        n=(n*2)+1;
-        short num=-1,orderR=1;
-        for(short i=0;i<record;i++){
-            for(int j=0;j<n;j++){
-                file.write((char*)&num,sizeof(num));
-            }
-            file<<'\n';
-        }
     }
-}
 
-    int SearchARecord(const char* filename, short RecordID) {
-        int nodeSize = 2 * m + 1;
-
-        fstream file(filename, ios::binary | ios::in);
-
-        file.seekg(nodeSize, ios::beg);
-        file.read(reinterpret_cast<char*>(&isLeaf), sizeof(isLeaf));
-
-        if (isLeaf == -1) {
-            return -1; // Record not found in this branch
-        }
-
-        records.clear();
-        for (int i = 0; i < m; ++i) {
-            short value, offset;
-            file.read(reinterpret_cast<char*>(&value), sizeof(value));
-            file.read(reinterpret_cast<char*>(&offset), sizeof(offset));
-            if (value == -1) {
-                break;
+    void creatFile(const char* filename, int n,int record){
+        fstream file(filename,ios::out);
+        if(file.is_open()){
+            cout<<"file open successfully\n";
+            n=(n*2)+1;
+            short num=-1,orderR=1;
+            for(short i=0;i<record;i++){
+                for(int j=0;j<n;j++){
+                    file.write((char*)&num,sizeof(num));
+                }
+                file<<'\n';
             }
-            records.emplace_back(value, offset);
-        }
-
-        file.close();
-
-        // Search for the RecordID in the records vector
-        auto it = find_if(records.begin(), records.end(),
-                          [RecordID](const pair<short, short>& p) {
-                              return p.first == RecordID;
-                          });
-
-        if (it != records.end()) {
-            return it->second;
-        } else {
-            return -1;
         }
     }
 
 };
+//
+//void createFile(const char* filename, int n) {
+//    ofstream file(filename, ios::binary);
+//
+//    for (int i = 0; i < n; ++i) {
+//        BTreeNode node;
+//        node.isLeaf = 0;
+//        for (int j = 0; j < nodeSize; ++j) {
+//            node.children[j] = -1;
+//        }
+//        file.write(reinterpret_cast<char*>(&node.children), sizeof(node.children));
+//    }
+//
+//    file.close();
+//}
+
+
+//    int SearchARecord(const char* filename, short RecordID) {
+//        int nodeSize = 2 * m + 1;
+//
+//        fstream file(filename, ios::binary | ios::in);
+//
+//        file.seekg(nodeSize, ios::beg);
+//        file.read(reinterpret_cast<char*>(&isLeaf), sizeof(isLeaf));
+//
+//        if (isLeaf == -1) {
+//            return -1; // Record not found in this branch
+//        }
+//
+//        records.clear();
+//        for (int i = 0; i < m; ++i) {
+//            short value, offset;
+//            file.read(reinterpret_cast<char*>(&value), sizeof(value));
+//            file.read(reinterpret_cast<char*>(&offset), sizeof(offset));
+//            if (value == -1) {
+//                break;
+//            }
+//            records.emplace_back(value, offset);
+//        }
+//
+//        file.close();
+//
+//        // Search for the RecordID in the records vector
+//        auto it = find_if(records.begin(), records.end(),
+//                          [RecordID](const pair<short, short>& p) {
+//                              return p.first == RecordID;
+//                          });
+//
+//        if (it != records.end()) {
+//            return it->second;
+//        } else {
+//            return -1;
+//        }
+//    }
+
+
 
 int main() {
     const char* filename = "btree.txt";
@@ -200,7 +207,7 @@ int main() {
 
         switch (choice) {
             case 1: {
-                b.CreateIndexFile(filename, n);
+                b.creatFile(filename,5, 10);
                 break;
             }
             case 2: {
@@ -221,12 +228,12 @@ int main() {
                 short searchRecordID;
                 cout << "Enter RecordID to search:";
                 cin >> searchRecordID;
-                int result = b.SearchARecord(filename, searchRecordID);
-                if (result != -1) {
-                    cout << "The record is found, the reference is:  " << result << endl;
-                } else {
-                    cout << "Record not found." << endl;
-                }
+//                int result = b.SearchARecord(filename, searchRecordID);
+//                if (result != -1) {
+//                    cout << "The record is found, the reference is:  " << result << endl;
+//                } else {
+//                    cout << "Record not found." << endl;
+//                }
                 break;
             }
 
