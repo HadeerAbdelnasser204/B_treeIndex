@@ -13,8 +13,11 @@ private:
 
     int m;
     short isLeaf;  // 0 for leaf, 1 for non-leaf
-    vector<short>children; // record IDs or references to child nodes
+//    vector<short>children; // record IDs or references to child nodes
     vector<pair<short, short>> records;
+    // 0 for leaf, 1 for non-leaf
+    short children[nodeSize]; // record IDs or references to child nodes
+
 
 public:
 
@@ -28,130 +31,115 @@ public:
     }
 
 
-    void CreateIndexFile(const char* filename, int recordNum) {
-        //BTreeNode node;
-        int nodeSize = 2 * m + 1;
-        fstream file(filename, ios::binary| ios::out| ios::app|ios::in);
-        for (int i = 0; i < recordNum; ++i) {
+   int InsertNewRecordAtIndex (const char* filename, short RecordID, short Reference){
+    fstream file(filename, std::ios::binary | std::ios::out | std::ios::in);
+    short nodeSize = (2 * (2 * m + 1)) + 2;
 
-            for (int j = 0; j < nodeSize; ++j) {
+    file.seekg(nodeSize, std::ios::beg);
+    file.read(reinterpret_cast<char*>(&isLeaf), sizeof(isLeaf));
 
-                children.push_back(-1);
-                short num = -1;
-                file.write(reinterpret_cast<char*>(&num), sizeof(num));
+   short first=file.tellg();
 
-            }
-
-            //file.read(reinterpret_cast<char*>(&node), sizeof(BTreeNode));
-        }
-
-//           for (int i = 0; i < recordNum; ++i) {
-//
-//               cout << endl;
-//               for (int j = 0; j < nodeSize; j++) {
-//                        cout <<  node.children[j] << " ";
-//
-//                 }
-//           }
-
+    if (isLeaf == -1) {
+        short leaf = 0;
+        file.seekg(nodeSize, ios::beg);
+        file.write(reinterpret_cast<char*>(&leaf), sizeof(leaf));
+        file.write(reinterpret_cast<char*>(&RecordID), sizeof(RecordID));
+        file.write(reinterpret_cast<char*>(&Reference), sizeof(Reference));
+        file.flush();
         file.close();
+        return 0;
     }
 
-    int InsertNewRecordAtIndex (const char* filename, short RecordID, short Reference){
+     map<short, short> node;
+    int temp = nodeSize - 1;
+    int position = file.tellg();
 
-        int nodeSize = 2 * m + 1;
+    while (temp) {
+        short value;
+        short offset;
+        file.read(reinterpret_cast<char*>(&value), sizeof(value));
+        file.read(reinterpret_cast<char*>(&offset), sizeof(offset));
 
-        fstream file(filename, ios::binary| ios::out|ios::in);
+        if (value == -1) {
+            break;
+        }
 
-        file.seekg(nodeSize,ios::beg);
+        node[value] = offset;
+        temp = temp - 2;
+    }
 
-        file.read(reinterpret_cast<char*>(&isLeaf), sizeof(isLeaf));
-
-        if(isLeaf == -1){
-            isLeaf = 0;
-            short leaf = 0;
-            file.seekg(nodeSize, ios::beg);
-            file.write(reinterpret_cast<char*>(&leaf), sizeof(leaf));
-            file.write(reinterpret_cast<char*>(&RecordID), sizeof(RecordID));
-            file.write(reinterpret_cast<char*>(&Reference), sizeof(Reference));
-            file.flush();
-
-            file.seekg(nodeSize,ios::beg);
-            file.read(reinterpret_cast<char*>(&isLeaf), sizeof(isLeaf));
-            file.read(reinterpret_cast<char*>(&RecordID), sizeof(RecordID));
-            file.read(reinterpret_cast<char*>(&Reference), sizeof(Reference));
+    if (isLeaf == 0) {
+        file.seekg(position, ios::beg);
+        if (node.size() < 5) {
+            node[RecordID] = Reference;
+            file.seekp(position, ios::beg);
+            for (const auto& entry : node) {
+                file.write(reinterpret_cast<const char*>(&entry.first), sizeof(entry.first));
+                file.write(reinterpret_cast<const char*>(&entry.second), sizeof(entry.second));
+            }
             file.close();
-
-
             return 0;
+        } else {
+           short sizeNode=floor((node.size())/4);
+           vector<int>node1;vector<int>node2;
+            //split
 
-        }
-
-        vector<pair<short,short>> node;
-
-        int temp = nodeSize-1;
-        int position = file.tellg();
-
-        while(temp){
-            short value;
-            short offset;
-            file.read(reinterpret_cast<char*>(&value), sizeof(value));
-            file.read(reinterpret_cast<char*>(&offset), sizeof(offset));
-            if(value == -1){
-                break;
-            }
-            node.push_back(make_pair(value,offset));
-            temp = temp - 2;
 
 
         }
-
-
-        if(isLeaf == 0){
-
-            file.seekg(1,ios::cur);
-            file.seekp(position,ios::beg);
-
-
-            if(node.size() < 5){
-                node.push_back(make_pair(RecordID,Reference));
-                sort(node.begin(),node.end());
-
-                for (int i = 0; i < node.size() ; ++i) {
-                    cout << node[i].first << " "<< node[i].second << "\n";
-                    file.write(reinterpret_cast<char*>(&node[i].first), sizeof(&node[i].first));
-                    file.write(reinterpret_cast<char*>(&node[i].second), sizeof(&node[i].second));
-
-                }
-
-                file.seekg(position,ios::beg);
-
-                while(temp){
-                    short value;
-                    short offset;
-                    file.read(reinterpret_cast<char*>(&value), sizeof(value));
-                    file.read(reinterpret_cast<char*>(&offset), sizeof(offset));
-                    if(value == -1){
-                        break;
-                    }
-                    temp = temp - 2;
-                }
-
-                file.close();
-
-                return 0;
-
-            }
-            else{
-                //split
-            }
-
-        }
-
     }
 
+    return 0;
+}
+
+};
+
+void createFile(const char* filename, int n) {
+    ofstream file(filename, ios::binary);
+
+    for (int i = 0; i < n; ++i) {
+        BTreeNode node;
+        node.isLeaf = 0;
+        for (int j = 0; j < nodeSize; ++j) {
+            node.children[j] = -1;
+        }
+        file.write(reinterpret_cast<char*>(&node.children), sizeof(node.children));
+    }
+
+    file.close();
+}
+
+void displayFile(const char* filename) {
+     ifstream inputFile(filename, std::ios::binary);
+
+    if (inputFile.is_open()) {
+        // Read the content as binary data
+         short value;
+        while (inputFile.read(reinterpret_cast<char*>(&value), sizeof(value))) {
+            if (value != 2573) cout << value << ' ';
+            else cout <<'\n';
+            }}
+        // Close the file
+        inputFile.close();
 
 
+}
+
+void creatFile(const char* filename, int n,int record){
+    fstream file(filename,ios::out);
+    if(file.is_open()){
+        cout<<"file open successfully\n";
+        n=(n*2)+1;
+        short num=-1,orderR=1;
+        for(short i=0;i<record;i++){
+            for(int j=0;j<n;j++){
+                file.write((char*)&num,sizeof(num));
+            }
+            file<<'\n';
+        }
+    }
+}
 
     int SearchARecord(const char* filename, short RecordID) {
         int nodeSize = 2 * m + 1;
