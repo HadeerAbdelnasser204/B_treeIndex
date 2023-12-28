@@ -338,14 +338,21 @@ public:
                 }
                 else {
 
-                    while (true) {
+                    split(node, RecordID, Reference, file, start);
+
+                    while (!storage.empty()) {
 
                         if (storage.end()->first < m) {
                             split(node, RecordID, Reference, file, start);
-
                         }
                         else {
+
+                            file.seekg(storage.end()->first,ios::beg);
+                            short p = file.tellg();
+                            node = readRecord(p,file);
                             storage.pop_back();
+
+
                         }
                     }
 
