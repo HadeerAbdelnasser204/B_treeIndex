@@ -78,9 +78,13 @@ public:
 
 
     }
-    void split(RecordMap node ,short RecordID , short Reference , fstream &file, short position){
+    void split(RecordMap node ,short RecordID , short Reference , fstream &file, short position,short Parent){
 
         const short nodeSize = (2 * (2 * m + 1)) + 2;
+
+        RecordMap parentNode;
+        file.seekg(Parent+2,ios::beg);
+        parentNode = readRecord(Parent,file);
 
         node.insert({RecordID, Reference});
 
@@ -97,65 +101,129 @@ public:
         pair<int, int> maxInstanceChild1 = findMaxInstance(child1);
         pair<int, int> maxInstanceChild2 = findMaxInstance(child2);
 
-        // Put the maximum instances back into the original map
-        node.clear();
-        node.insert(maxInstanceChild1);
-        node.insert(maxInstanceChild2);
+
+        if( 0 < parentNode.size() < m && Parent != 0){
+            file.seekg(position-2,ios::beg);
+
+            short x = file.tellg()/nodeSize;
+
+            parentNode[maxInstanceChild1.first] = x;
 
 
-        // Assuming position is the position in the file where you want to write
-        file.seekg(position - 2, ios::beg);
-        file.read(reinterpret_cast<char*>(&isLeaf), sizeof(isLeaf));
+            isLeaf = 0;
+            file.write(reinterpret_cast<char*>(&isLeaf), sizeof(isLeaf));
+            writeRecord(child1,file);
+            short value;
 
-        short p1;
-        for (short i = 1; i < 10; ++i) {
-            // Your existing code for reading isLeaf goes here
-            if (isLeaf == -1) {
-                isLeaf = 0;
+            file.read(reinterpret_cast<char*>(&value), sizeof(value));
+            while(value != 2573){
+
+                short x = -1 ;
 
                 file.seekg(-2,ios::cur);
-                short r = file.tellg();
-                p1 = i;
+                file.write(reinterpret_cast<char*>(&x), sizeof(x));
 
-                file.write(reinterpret_cast<char*>(&isLeaf), sizeof(isLeaf));
-
-                writeRecord(child1,file);
-                //p2 = i+1;
-                file.seekg(r + nodeSize,ios::beg);
-
-                file.write(reinterpret_cast<char*>(&isLeaf), sizeof(isLeaf));
-
-                writeRecord(child2,file);
-
-                file.flush();
-
-                break;
+                file.read(reinterpret_cast<char*>(&value), sizeof(value));
             }
 
-            else{
+            file.seekg(nodeSize, ios::beg);
+            file.read(reinterpret_cast<char*>(&isLeaf), sizeof(isLeaf));
 
-                file.seekg(nodeSize - 2,ios::cur);
-                file.read(reinterpret_cast<char*>(&isLeaf), sizeof(isLeaf));
+            short p1;
+            for (short i = 1; i < 10; ++i) {
+                // Your existing code for reading isLeaf goes here
+                if (isLeaf == -1) {
+                    isLeaf = 0;
+
+                    file.seekg(-2,ios::cur);
+                    short r = file.tellg();
+                    p1 = i;
+
+                    file.write(reinterpret_cast<char*>(&isLeaf), sizeof(isLeaf));
+
+                    writeRecord(child2,file);
+
+                    file.flush();
+
+                    break;
+                }
+
+                else{
+
+                    file.seekg(nodeSize - 2,ios::cur);
+                    file.read(reinterpret_cast<char*>(&isLeaf), sizeof(isLeaf));
+                }
+
             }
+            parentNode[maxInstanceChild2.first] = p1;
+
+            file.seekg(Parent+2,ios::beg);
+
+            writeRecord(parentNode,file);
+
+
 
         }
+        else {
+            // Put the maximum instances back into the original map
+            node.clear();
+            node.insert(maxInstanceChild1);
+            node.insert(maxInstanceChild2);
+            // Assuming position is the position in the file where you want to write
+            file.seekg(position - 2, ios::beg);
+            file.read(reinterpret_cast<char*>(&isLeaf), sizeof(isLeaf));
 
-        file.seekg(position - 2, ios::beg);
+            short p1;
+            for (short i = 1; i < 10; ++i) {
+                // Your existing code for reading isLeaf goes here
+                if (isLeaf == -1) {
+                    isLeaf = 0;
 
-        isLeaf = 1 ;
+                    file.seekg(-2,ios::cur);
+                    short r = file.tellg();
+                    p1 = i;
 
-        file.write(reinterpret_cast<char*>(&isLeaf), sizeof(isLeaf));
+                    file.write(reinterpret_cast<char*>(&isLeaf), sizeof(isLeaf));
 
-        for (const auto& entry : node) {
+                    writeRecord(child1,file);
+                    //p2 = i+1;
+                    file.seekg(r + nodeSize,ios::beg);
 
-            if(entry.first != -1) {
-                node[entry.first] = p1++;
+                    file.write(reinterpret_cast<char*>(&isLeaf), sizeof(isLeaf));
+
+                    writeRecord(child2,file);
+
+                    file.flush();
+
+                    break;
+                }
+
+                else{
+
+                    file.seekg(nodeSize - 2,ios::cur);
+                    file.read(reinterpret_cast<char*>(&isLeaf), sizeof(isLeaf));
+                }
+
+            }
+            file.seekg(position - 2, ios::beg);
+
+            isLeaf = 1;
+
+            file.write(reinterpret_cast<char *>(&isLeaf), sizeof(isLeaf));
+
+            for (const auto &entry: node) {
+
+                if (entry.first != -1) {
+                    node[entry.first] = p1++;
+                }
+
+                file.write(reinterpret_cast<const char *>(&entry.first), sizeof(entry.first));
+                file.write(reinterpret_cast<const char *>(&entry.second), sizeof(entry.second));
             }
 
-            file.write(reinterpret_cast<const char*>(&entry.first), sizeof(entry.first));
-            file.write(reinterpret_cast<const char*>(&entry.second), sizeof(entry.second));
-        }
 
+
+        }
         short value;
         file.read(reinterpret_cast<char*>(&value), sizeof(value));
         while(value != 2573){
@@ -167,6 +235,9 @@ public:
 
             file.read(reinterpret_cast<char*>(&value), sizeof(value));
         }
+
+
+
     }
 
 
@@ -208,7 +279,7 @@ public:
             }
             else {
 
-                split(node,RecordID,Reference,file,position);
+                split(node,RecordID,Reference,file,position,0);
 
                 return 0;
 
@@ -291,16 +362,20 @@ public:
                 while (!storage.empty()) {
 
                     if (storage.rbegin()->first < m) {
-                        split(node, RecordID, Reference, file, start+2);
+
+
+                        split(node, RecordID, Reference, file, start+2 ,storage.rbegin()->second);
+
                     } else {
 
                         file.seekg(storage.rbegin()->first, ios::beg);
                         short p = file.tellg();
                         node = readRecord(p, file);
-                        storage.pop_back();
+
 
 
                     }
+                    storage.pop_back();
                 }
 
             }
