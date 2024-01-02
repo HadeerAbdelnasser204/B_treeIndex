@@ -353,12 +353,29 @@ public:
 
                 }
                 file.close();
+                file.open(filename,ios::binary|ios::out|ios::in);
+                short leaf=-2;
+                file.seekg(nodeSize,ios::beg);
+                file.read((char*)&leaf,sizeof(leaf));
+                while(true){
+                    if(leaf==-1){
+                        short offset=(file.tellg());
+                        offset=(offset-2)/nodeSize;
+                        file.seekg(2,ios::beg);
+                        file.write((char*)&offset,sizeof(offset));
+                        break;
+                    }else{
+                        file.seekg(nodeSize-2,ios::cur);
+                        file.read((char*)&leaf,sizeof(leaf));
+                    }
+                }
 
                 return 0;
 
             }
-            else {
 
+            else {
+                file.seekg(0,ios::beg);
                 while (!storage.empty()) {
 
                     if (storage.rbegin()->first < m) {
@@ -368,11 +385,9 @@ public:
 
                     } else {
 
-                        file.seekg(storage.rbegin()->first, ios::beg);
+                        file.seekg(storage.rbegin()->second, ios::beg);
                         short p = file.tellg();
                         node = readRecord(p, file);
-
-
 
                     }
                     storage.pop_back();
@@ -381,7 +396,25 @@ public:
             }
 
 
-        }    return 0;
+        } file.close();
+        file.open(filename,ios::binary|ios::out|ios::in);
+        short leaf=-2;
+        file.seekg(nodeSize,ios::beg);
+        file.read((char*)&leaf,sizeof(leaf));
+        while(true){
+            if(leaf==-1){
+                short offset=(file.tellg());
+                offset=(offset-2)/nodeSize;
+                file.seekg(2,ios::beg);
+                file.write((char*)&offset,sizeof(offset));
+                break;
+            }else{
+                file.seekg(nodeSize-2,ios::cur);
+                file.read((char*)&leaf,sizeof(leaf));
+            }
+        }
+
+        return 0;
 
 
 
@@ -419,60 +452,6 @@ public:
     }
 
 };
-//
-//void createFile(const char* filename, int n) {
-//    ofstream file(filename, ios::binary);
-//
-//    for (int i = 0; i < n; ++i) {
-//        BTreeNode node;
-//        node.isLeaf = 0;
-//        for (int j = 0; j < nodeSize; ++j) {
-//            node.children[j] = -1;
-//        }
-//        file.write(reinterpret_cast<char*>(&node.children), sizeof(node.children));
-//    }
-//
-//    file.close();
-//}
-
-
-//    int SearchARecord(const char* filename, short RecordID) {
-//        int nodeSize = 2 * m + 1;
-//
-//        fstream file(filename, ios::binary | ios::in);
-//
-//        file.seekg(nodeSize, ios::beg);
-//        file.read(reinterpret_cast<char*>(&isLeaf), sizeof(isLeaf));
-//
-//        if (isLeaf == -1) {
-//            return -1; // Record not found in this branch
-//        }
-//
-//        records.clear();
-//        for (int i = 0; i < m; ++i) {
-//            short value, offset;
-//            file.read(reinterpret_cast<char*>(&value), sizeof(value));
-//            file.read(reinterpret_cast<char*>(&offset), sizeof(offset));
-//            if (value == -1) {
-//                break;
-//            }
-//            records.emplace_back(value, offset);
-//        }
-//
-//        file.close();
-//
-//        // Search for the RecordID in the records vector
-//        auto it = find_if(records.begin(), records.end(),
-//                          [RecordID](const pair<short, short>& p) {
-//                              return p.first == RecordID;
-//                          });
-//
-//        if (it != records.end()) {
-//            return it->second;
-//        } else {
-//            return -1;
-//        }
-//    }
 
 
 
