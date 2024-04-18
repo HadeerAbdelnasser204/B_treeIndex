@@ -1,2 +1,2 @@
-#B_tree_Index
+B_tree_Index
 
